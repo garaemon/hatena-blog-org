@@ -57,11 +57,8 @@ jobs:
     needs: test
     strategy:
       matrix:
-        goos: [linux, windows, darwin]
+        goos: [linux, darwin]
         goarch: [amd64, arm64]
-        exclude:
-          - goos: windows
-            goarch: arm64
 
     steps:
     - uses: actions/checkout@v4
@@ -73,10 +70,10 @@ jobs:
 
     - name: Build binary
       run: |
-        GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o hatena-blog-org-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }} .
+        GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o hatena-blog-org-${{ matrix.goos }}-${{ matrix.goarch }} .
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: hatena-blog-org-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: hatena-blog-org-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goos == 'windows' && '.exe' || '' }}
+        path: hatena-blog-org-${{ matrix.goos }}-${{ matrix.goarch }}

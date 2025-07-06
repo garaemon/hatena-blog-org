@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Category assignment
 - Configuration file support
 - Interactive mode
-- Cross-platform support (Linux, macOS, Windows)
+- Cross-platform support (Linux, macOS)
 
 ## [1.0.0] - 2025-01-06
 
