@@ -13,7 +13,7 @@ func TestLoadConfigFromFile(t *testing.T) {
 		"api_key": "testapi",
 		"blog_domain": "testblog.example.com"
 	}`
-	
+
 	err := os.WriteFile(tmpFile, []byte(configContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create temp config file: %v", err)
@@ -50,7 +50,7 @@ func TestLoadConfigFromFileInvalidJSON(t *testing.T) {
 		"api_key": "testapi"
 		"blog_domain": "testblog.example.com"
 	}`
-	
+
 	err := os.WriteFile(tmpFile, []byte(invalidContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create temp config file: %v", err)

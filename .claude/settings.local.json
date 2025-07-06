@@ -7,7 +7,8 @@
       "WebFetch(domain:help.hatenablog.com)",
       "WebFetch(domain:developer.hatena.ne.jp)",
       "Bash(go get:*)",
-      "Bash(go:*)"
+      "Bash(go:*)",
+      "Bash(gh run view:*)"
     ],
     "deny": []
   }
