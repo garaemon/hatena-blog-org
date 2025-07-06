@@ -26,7 +26,7 @@ func TestNewHatenaClient(t *testing.T) {
 func TestCreateWSSEHeader(t *testing.T) {
 	client := NewHatenaClient("testuser", "testapi", "testblog.example.com")
 	header := client.createWSSEHeader()
-	
+
 	if !strings.Contains(header, "UsernameToken Username=\"testuser\"") {
 		t.Error("WSSE header should contain username")
 	}
@@ -45,7 +45,7 @@ func TestGenerateNonce(t *testing.T) {
 	nonce1 := generateNonce()
 	time.Sleep(1 * time.Millisecond)
 	nonce2 := generateNonce()
-	
+
 	if nonce1 == nonce2 {
 		t.Error("Generated nonces should be different")
 	}
@@ -57,7 +57,7 @@ func TestGenerateNonce(t *testing.T) {
 func TestGenerateDigest(t *testing.T) {
 	digest1 := generateDigest("nonce1", "created1", "password1")
 	digest2 := generateDigest("nonce2", "created2", "password2")
-	
+
 	if digest1 == digest2 {
 		t.Error("Different inputs should generate different digests")
 	}
@@ -74,9 +74,9 @@ func TestCreateEntryXML(t *testing.T) {
 		Category: "Test Category",
 		IsDraft:  true,
 	}
-	
+
 	xml := client.createEntryXML(entry)
-	
+
 	if !strings.Contains(xml, "<title>Test Title</title>") {
 		t.Error("XML should contain title")
 	}
@@ -101,9 +101,9 @@ func TestCreateEntryXMLNoDraft(t *testing.T) {
 		Content: "Test content",
 		IsDraft: false,
 	}
-	
+
 	xml := client.createEntryXML(entry)
-	
+
 	if !strings.Contains(xml, "<app:draft>no</app:draft>") {
 		t.Error("XML should indicate non-draft status")
 	}
@@ -117,7 +117,7 @@ This is some content.
 ## Subsection
 
 More content.`
-	
+
 	title := extractTitleFromMarkdown(markdown)
 	if title != "Test Title" {
 		t.Errorf("Expected title to be 'Test Title', got '%s'", title)
@@ -130,7 +130,7 @@ func TestExtractTitleFromMarkdownNoTitle(t *testing.T) {
 ## Subsection
 
 More content.`
-	
+
 	title := extractTitleFromMarkdown(markdown)
 	if title != "Untitled" {
 		t.Errorf("Expected title to be 'Untitled', got '%s'", title)
@@ -145,7 +145,7 @@ This is some content.
 ## Subsection
 
 More content.`
-	
+
 	content := removeTitleFromMarkdown(markdown)
 	if strings.Contains(content, "# Test Title") {
 		t.Error("Title should be removed from content")
@@ -161,7 +161,7 @@ func TestRemoveTitleFromMarkdownNoTitle(t *testing.T) {
 ## Subsection
 
 More content.`
-	
+
 	content := removeTitleFromMarkdown(markdown)
 	if content != markdown {
 		t.Error("Content should remain unchanged when no title is present")

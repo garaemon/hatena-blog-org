@@ -38,7 +38,7 @@ func (c *HatenaClient) createWSSEHeader() string {
 	nonce := generateNonce()
 	created := time.Now().Format(time.RFC3339)
 	digest := generateDigest(nonce, created, c.APIKey)
-	
+
 	return fmt.Sprintf(`UsernameToken Username="%s", PasswordDigest="%s", Nonce="%s", Created="%s"`,
 		c.HatenaID, digest, nonce, created)
 }
@@ -83,7 +83,7 @@ func (c *HatenaClient) createEntryXML(entry BlogEntry) string {
 
 func (c *HatenaClient) PostEntry(entry BlogEntry) error {
 	entryXML := c.createEntryXML(entry)
-	
+
 	req, err := http.NewRequest("POST", c.BaseURL+"/entry", bytes.NewBufferString(entryXML))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %v", err)
