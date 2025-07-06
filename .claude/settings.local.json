@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(go mod:*)",
+      "WebFetch(domain:help.hatenablog.com)",
+      "WebFetch(domain:developer.hatena.ne.jp)",
+      "Bash(go get:*)",
+      "Bash(go:*)"
+    ],
+    "deny": []
+  }
+}
