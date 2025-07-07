@@ -103,20 +103,33 @@ func postOrgFile(orgFile string, config *Config, category string, isDraft bool) 
 		return fmt.Errorf("failed to get absolute path: %v", err)
 	}
 
+	title, err := extractTitleFromOrg(absPath)
+	if err != nil {
+		return fmt.Errorf("failed to extract title from org file: %v", err)
+	}
+
+	categories, err := extractCategoriesFromOrg(absPath)
+	if err != nil {
+		return fmt.Errorf("failed to extract categories from org file: %v", err)
+	}
+
+	if category != "" {
+		categories = append(categories, category)
+	}
+
 	markdown, err := convertOrgToMarkdown(absPath)
 	if err != nil {
 		return fmt.Errorf("failed to convert org to markdown: %v", err)
 	}
 
-	title := extractTitleFromMarkdown(markdown)
 	content := removeTitleFromMarkdown(markdown)
 
 	client := NewHatenaClient(config.HatenaID, config.APIKey, config.BlogDomain)
 	entry := BlogEntry{
-		Title:    title,
-		Content:  content,
-		Category: category,
-		IsDraft:  isDraft,
+		Title:      title,
+		Content:    content,
+		Categories: categories,
+		IsDraft:    isDraft,
 	}
 
 	return client.PostEntry(entry)

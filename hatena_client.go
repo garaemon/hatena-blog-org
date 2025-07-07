@@ -19,10 +19,10 @@ type HatenaClient struct {
 }
 
 type BlogEntry struct {
-	Title    string
-	Content  string
-	Category string
-	IsDraft  bool
+	Title      string
+	Content    string
+	Categories []string
+	IsDraft    bool
 }
 
 func NewHatenaClient(hatenaID, apiKey, blogDomain string) *HatenaClient {
@@ -67,9 +67,11 @@ func (c *HatenaClient) createEntryXML(entry BlogEntry) string {
   <content type="text/x-markdown">%s</content>
   <updated>%s</updated>`
 
-	if entry.Category != "" {
-		xml += fmt.Sprintf(`
-  <category term="%s" />`, entry.Category)
+	for _, category := range entry.Categories {
+		if category != "" {
+			xml += fmt.Sprintf(`
+  <category term="%s" />`, category)
+		}
 	}
 
 	xml += fmt.Sprintf(`
@@ -121,14 +123,5 @@ func extractTitleFromMarkdown(content string) string {
 }
 
 func removeTitleFromMarkdown(content string) string {
-	lines := strings.Split(content, "\n")
-	for i, line := range lines {
-		if strings.HasPrefix(line, "# ") {
-			if i+1 < len(lines) && lines[i+1] == "" {
-				return strings.Join(lines[i+2:], "\n")
-			}
-			return strings.Join(lines[i+1:], "\n")
-		}
-	}
 	return content
 }
