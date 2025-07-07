@@ -249,6 +249,39 @@ func TestExtractCategoriesFromOrgFileNotFound(t *testing.T) {
 	}
 }
 
+func TestFilterOrgMetadata(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name: "filter org filetags block",
+			input: "```{=org}\n#+filetags: :emacs:go:claude:\n```\n\n# Title\n\nContent here",
+			expected: "\n# Title\n\nContent here",
+		},
+		{
+			name: "no org metadata",
+			input: "# Title\n\nContent here",
+			expected: "# Title\n\nContent here",
+		},
+		{
+			name: "multiple org blocks",
+			input: "```{=org}\n#+title: Test\n```\n\n# Title\n\n```{=org}\n#+filetags: :test:\n```\n\nContent",
+			expected: "\n# Title\n\n\nContent",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := filterOrgMetadata(tt.input)
+			if result != tt.expected {
+				t.Errorf("Expected:\n%q\nGot:\n%q", tt.expected, result)
+			}
+		})
+	}
+}
+
 func isPandocAvailable() bool {
 	_, err := exec.LookPath("pandoc")
 	return err == nil

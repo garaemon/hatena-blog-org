@@ -24,7 +24,30 @@ func convertOrgToMarkdown(orgFilePath string) (string, error) {
 		return "", fmt.Errorf("pandoc conversion failed: %v", err)
 	}
 
-	return string(output), nil
+	markdown := string(output)
+	return filterOrgMetadata(markdown), nil
+}
+
+func filterOrgMetadata(markdown string) string {
+	lines := strings.Split(markdown, "\n")
+	var filteredLines []string
+	inOrgBlock := false
+
+	for _, line := range lines {
+		if strings.HasPrefix(line, "```{=org}") {
+			inOrgBlock = true
+			continue
+		}
+		if inOrgBlock && strings.HasPrefix(line, "```") {
+			inOrgBlock = false
+			continue
+		}
+		if !inOrgBlock {
+			filteredLines = append(filteredLines, line)
+		}
+	}
+
+	return strings.Join(filteredLines, "\n")
 }
 
 func fileExists(filename string) bool {
