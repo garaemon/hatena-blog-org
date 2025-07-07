@@ -157,6 +157,98 @@ func TestExtractTitleFromOrgFileNotFound(t *testing.T) {
 	}
 }
 
+func TestExtractCategoriesFromOrg(t *testing.T) {
+	tests := []struct {
+		name               string
+		orgContent         string
+		expectedCategories []string
+	}{
+		{
+			name:               "lowercase filetags",
+			orgContent:         "#+filetags: tag1 tag2 tag3\n\nContent here",
+			expectedCategories: []string{"tag1", "tag2", "tag3"},
+		},
+		{
+			name:               "uppercase filetags",
+			orgContent:         "#+FILETAGS: TAG1 TAG2\n\nContent here",
+			expectedCategories: []string{"TAG1", "TAG2"},
+		},
+		{
+			name:               "mixed case filetags",
+			orgContent:         "#+FileTags: MixedCase Another\n\nContent here",
+			expectedCategories: []string{"MixedCase", "Another"},
+		},
+		{
+			name:               "filetags with colons",
+			orgContent:         "#+filetags: :tag1: :tag2: :tag3:\n\nContent here",
+			expectedCategories: []string{"tag1", "tag2", "tag3"},
+		},
+		{
+			name:               "filetags colon-separated",
+			orgContent:         "#+filetags: tag1:tag2:tag3\n\nContent here",
+			expectedCategories: []string{"tag1", "tag2", "tag3"},
+		},
+		{
+			name:               "filetags mixed separators",
+			orgContent:         "#+filetags: tag1:tag2 tag3:tag4\n\nContent here",
+			expectedCategories: []string{"tag1", "tag2", "tag3", "tag4"},
+		},
+		{
+			name:               "filetags with extra spaces",
+			orgContent:         "#+filetags:   tag1   tag2   tag3   \n\nContent here",
+			expectedCategories: []string{"tag1", "tag2", "tag3"},
+		},
+		{
+			name:               "no filetags",
+			orgContent:         "Just some content without filetags",
+			expectedCategories: []string{},
+		},
+		{
+			name:               "empty filetags",
+			orgContent:         "#+filetags:\n\nContent here",
+			expectedCategories: []string{},
+		},
+		{
+			name:               "single tag",
+			orgContent:         "#+filetags: singletag\n\nContent here",
+			expectedCategories: []string{"singletag"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpFile := filepath.Join(os.TempDir(), "test_categories.org")
+			err := os.WriteFile(tmpFile, []byte(tt.orgContent), 0644)
+			if err != nil {
+				t.Fatalf("Failed to create temp file: %v", err)
+			}
+			defer os.Remove(tmpFile)
+
+			categories, err := extractCategoriesFromOrg(tmpFile)
+			if err != nil {
+				t.Fatalf("extractCategoriesFromOrg failed: %v", err)
+			}
+
+			if len(categories) != len(tt.expectedCategories) {
+				t.Errorf("Expected %d categories, got %d", len(tt.expectedCategories), len(categories))
+			}
+
+			for i, expectedCategory := range tt.expectedCategories {
+				if i >= len(categories) || categories[i] != expectedCategory {
+					t.Errorf("Expected category %q at index %d, got %q", expectedCategory, i, categories[i])
+				}
+			}
+		})
+	}
+}
+
+func TestExtractCategoriesFromOrgFileNotFound(t *testing.T) {
+	_, err := extractCategoriesFromOrg("/nonexistent/file.org")
+	if err == nil {
+		t.Error("Expected error for nonexistent file")
+	}
+}
+
 func isPandocAvailable() bool {
 	_, err := exec.LookPath("pandoc")
 	return err == nil
