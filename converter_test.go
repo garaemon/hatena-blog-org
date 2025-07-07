@@ -93,38 +93,38 @@ func TestGetAbsPath(t *testing.T) {
 
 func TestExtractTitleFromOrg(t *testing.T) {
 	tests := []struct {
-		name        string
-		orgContent  string
+		name          string
+		orgContent    string
 		expectedTitle string
 	}{
 		{
-			name:        "lowercase title",
-			orgContent:  "#+title: Test Title\n\nContent here",
+			name:          "lowercase title",
+			orgContent:    "#+title: Test Title\n\nContent here",
 			expectedTitle: "Test Title",
 		},
 		{
-			name:        "uppercase title",
-			orgContent:  "#+TITLE: Uppercase Title\n\nContent here",
+			name:          "uppercase title",
+			orgContent:    "#+TITLE: Uppercase Title\n\nContent here",
 			expectedTitle: "Uppercase Title",
 		},
 		{
-			name:        "mixed case title",
-			orgContent:  "#+Title: Mixed Case Title\n\nContent here",
+			name:          "mixed case title",
+			orgContent:    "#+Title: Mixed Case Title\n\nContent here",
 			expectedTitle: "Mixed Case Title",
 		},
 		{
-			name:        "title with extra spaces",
-			orgContent:  "#+title:   Spaced Title   \n\nContent here",
+			name:          "title with extra spaces",
+			orgContent:    "#+title:   Spaced Title   \n\nContent here",
 			expectedTitle: "Spaced Title",
 		},
 		{
-			name:        "no title",
-			orgContent:  "Just some content without title",
+			name:          "no title",
+			orgContent:    "Just some content without title",
 			expectedTitle: "Untitled",
 		},
 		{
-			name:        "empty title",
-			orgContent:  "#+title:\n\nContent here",
+			name:          "empty title",
+			orgContent:    "#+title:\n\nContent here",
 			expectedTitle: "Untitled",
 		},
 	}
@@ -256,18 +256,18 @@ func TestFilterOrgMetadata(t *testing.T) {
 		expected string
 	}{
 		{
-			name: "filter org filetags block",
-			input: "```{=org}\n#+filetags: :emacs:go:claude:\n```\n\n# Title\n\nContent here",
+			name:     "filter org filetags block",
+			input:    "```{=org}\n#+filetags: :emacs:go:claude:\n```\n\n# Title\n\nContent here",
 			expected: "\n# Title\n\nContent here",
 		},
 		{
-			name: "no org metadata",
-			input: "# Title\n\nContent here",
+			name:     "no org metadata",
+			input:    "# Title\n\nContent here",
 			expected: "# Title\n\nContent here",
 		},
 		{
-			name: "multiple org blocks",
-			input: "```{=org}\n#+title: Test\n```\n\n# Title\n\n```{=org}\n#+filetags: :test:\n```\n\nContent",
+			name:     "multiple org blocks",
+			input:    "```{=org}\n#+title: Test\n```\n\n# Title\n\n```{=org}\n#+filetags: :test:\n```\n\nContent",
 			expected: "\n# Title\n\n\nContent",
 		},
 	}

@@ -97,12 +97,12 @@ func extractCategoriesFromOrg(orgFilePath string) ([]string, error) {
 			tagsString := strings.TrimSpace(line[11:])
 			if tagsString != "" {
 				var categories []string
-				
+
 				// Split by both spaces and colons
 				parts := strings.FieldsFunc(tagsString, func(c rune) bool {
 					return c == ' ' || c == '\t' || c == ':'
 				})
-				
+
 				for _, part := range parts {
 					part = strings.TrimSpace(part)
 					if part != "" {
