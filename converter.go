@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -32,6 +33,31 @@ func fileExists(filename string) bool {
 		return false
 	}
 	return !info.IsDir()
+}
+
+func extractTitleFromOrg(orgFilePath string) (string, error) {
+	file, err := os.Open(orgFilePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to open org file: %v", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(strings.ToLower(line), "#+title:") {
+			title := strings.TrimSpace(line[8:])
+			if title != "" {
+				return title, nil
+			}
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return "", fmt.Errorf("failed to read org file: %v", err)
+	}
+
+	return "Untitled", nil
 }
 
 func getAbsPath(path string) (string, error) {

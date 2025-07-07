@@ -91,6 +91,72 @@ func TestGetAbsPath(t *testing.T) {
 	}
 }
 
+func TestExtractTitleFromOrg(t *testing.T) {
+	tests := []struct {
+		name        string
+		orgContent  string
+		expectedTitle string
+	}{
+		{
+			name:        "lowercase title",
+			orgContent:  "#+title: Test Title\n\nContent here",
+			expectedTitle: "Test Title",
+		},
+		{
+			name:        "uppercase title",
+			orgContent:  "#+TITLE: Uppercase Title\n\nContent here",
+			expectedTitle: "Uppercase Title",
+		},
+		{
+			name:        "mixed case title",
+			orgContent:  "#+Title: Mixed Case Title\n\nContent here",
+			expectedTitle: "Mixed Case Title",
+		},
+		{
+			name:        "title with extra spaces",
+			orgContent:  "#+title:   Spaced Title   \n\nContent here",
+			expectedTitle: "Spaced Title",
+		},
+		{
+			name:        "no title",
+			orgContent:  "Just some content without title",
+			expectedTitle: "Untitled",
+		},
+		{
+			name:        "empty title",
+			orgContent:  "#+title:\n\nContent here",
+			expectedTitle: "Untitled",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpFile := filepath.Join(os.TempDir(), "test_title.org")
+			err := os.WriteFile(tmpFile, []byte(tt.orgContent), 0644)
+			if err != nil {
+				t.Fatalf("Failed to create temp file: %v", err)
+			}
+			defer os.Remove(tmpFile)
+
+			title, err := extractTitleFromOrg(tmpFile)
+			if err != nil {
+				t.Fatalf("extractTitleFromOrg failed: %v", err)
+			}
+
+			if title != tt.expectedTitle {
+				t.Errorf("Expected title %q, got %q", tt.expectedTitle, title)
+			}
+		})
+	}
+}
+
+func TestExtractTitleFromOrgFileNotFound(t *testing.T) {
+	_, err := extractTitleFromOrg("/nonexistent/file.org")
+	if err == nil {
+		t.Error("Expected error for nonexistent file")
+	}
+}
+
 func isPandocAvailable() bool {
 	_, err := exec.LookPath("pandoc")
 	return err == nil
