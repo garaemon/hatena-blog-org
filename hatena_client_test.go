@@ -148,11 +148,8 @@ This is some content.
 More content.`
 
 	content := removeTitleFromMarkdown(markdown)
-	if strings.Contains(content, "# Test Title") {
-		t.Error("Title should be removed from content")
-	}
-	if !strings.Contains(content, "This is some content.") {
-		t.Error("Main content should remain")
+	if content != markdown {
+		t.Error("Content should remain unchanged since we no longer remove titles")
 	}
 }
 

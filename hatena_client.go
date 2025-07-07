@@ -123,14 +123,5 @@ func extractTitleFromMarkdown(content string) string {
 }
 
 func removeTitleFromMarkdown(content string) string {
-	lines := strings.Split(content, "\n")
-	for i, line := range lines {
-		if strings.HasPrefix(line, "# ") {
-			if i+1 < len(lines) && lines[i+1] == "" {
-				return strings.Join(lines[i+2:], "\n")
-			}
-			return strings.Join(lines[i+1:], "\n")
-		}
-	}
 	return content
 }
