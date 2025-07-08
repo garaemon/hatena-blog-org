@@ -49,7 +49,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Successfully posted to Hatena Blog!\nArticle URL: %s\n", articleURL)
+	fmt.Printf("Successfully posted to Hatena Blog!\nEdit URL: %s\n", articleURL)
 }
 
 func runInteractiveMode() {
@@ -96,7 +96,7 @@ func runInteractiveMode() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Successfully posted to Hatena Blog!\nArticle URL: %s\n", articleURL)
+	fmt.Printf("Successfully posted to Hatena Blog!\nEdit URL: %s\n", articleURL)
 }
 
 func postOrgFile(orgFile string, config *Config, category string, isDraft bool) (string, error) {

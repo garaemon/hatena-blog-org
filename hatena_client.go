@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 )
@@ -29,7 +30,8 @@ type BlogEntry struct {
 type AtomEntry struct {
 	XMLName xml.Name `xml:"entry"`
 	ID      string   `xml:"id"`
-	Link    struct {
+	Links   []struct {
+		Rel  string `xml:"rel,attr"`
 		Href string `xml:"href,attr"`
 	} `xml:"link"`
 }
@@ -128,7 +130,20 @@ func (c *HatenaClient) PostEntry(entry BlogEntry) (string, error) {
 		return "", fmt.Errorf("failed to parse response XML: %v", err)
 	}
 
-	return atomEntry.Link.Href, nil
+	var editURL string
+	for _, link := range atomEntry.Links {
+		if link.Rel == "edit" {
+			editURL = link.Href
+			break
+		}
+	}
+	
+	if editURL == "" {
+		return "", fmt.Errorf("edit link not found in API response")
+	}
+
+	editPageURL := fmt.Sprintf("https://blog.hatena.ne.jp/%s/%s/edit?entry=%s", c.HatenaID, c.BlogDomain, extractEntryIDFromURL(editURL))
+	return editPageURL, nil
 }
 
 func extractTitleFromMarkdown(content string) string {
@@ -143,4 +158,8 @@ func extractTitleFromMarkdown(content string) string {
 
 func removeTitleFromMarkdown(content string) string {
 	return content
+}
+
+func extractEntryIDFromURL(editURL string) string {
+	return path.Base(editURL)
 }
