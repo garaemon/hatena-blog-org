@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"encoding/base64"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 )
@@ -23,6 +25,15 @@ type BlogEntry struct {
 	Content    string
 	Categories []string
 	IsDraft    bool
+}
+
+type AtomEntry struct {
+	XMLName xml.Name `xml:"entry"`
+	ID      string   `xml:"id"`
+	Links   []struct {
+		Rel  string `xml:"rel,attr"`
+		Href string `xml:"href,attr"`
+	} `xml:"link"`
 }
 
 func NewHatenaClient(hatenaID, apiKey, blogDomain string) *HatenaClient {
@@ -83,12 +94,12 @@ func (c *HatenaClient) createEntryXML(entry BlogEntry) string {
 	return fmt.Sprintf(xml, entry.Title, c.HatenaID, entry.Content, time.Now().Format(time.RFC3339))
 }
 
-func (c *HatenaClient) PostEntry(entry BlogEntry) error {
+func (c *HatenaClient) PostEntry(entry BlogEntry) (string, error) {
 	entryXML := c.createEntryXML(entry)
 
 	req, err := http.NewRequest("POST", c.BaseURL+"/entry", bytes.NewBufferString(entryXML))
 	if err != nil {
-		return fmt.Errorf("failed to create request: %v", err)
+		return "", fmt.Errorf("failed to create request: %v", err)
 	}
 
 	req.Header.Set("Content-Type", "application/xml")
@@ -100,16 +111,39 @@ func (c *HatenaClient) PostEntry(entry BlogEntry) error {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("request failed: %v", err)
+		return "", fmt.Errorf("request failed: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
-	return nil
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response body: %v", err)
+	}
+
+	var atomEntry AtomEntry
+	if err := xml.Unmarshal(body, &atomEntry); err != nil {
+		return "", fmt.Errorf("failed to parse response XML: %v", err)
+	}
+
+	var editURL string
+	for _, link := range atomEntry.Links {
+		if link.Rel == "edit" {
+			editURL = link.Href
+			break
+		}
+	}
+
+	if editURL == "" {
+		return "", fmt.Errorf("edit link not found in API response")
+	}
+
+	editPageURL := fmt.Sprintf("https://blog.hatena.ne.jp/%s/%s/edit?entry=%s", c.HatenaID, c.BlogDomain, extractEntryIDFromURL(editURL))
+	return editPageURL, nil
 }
 
 func extractTitleFromMarkdown(content string) string {
@@ -124,4 +158,8 @@ func extractTitleFromMarkdown(content string) string {
 
 func removeTitleFromMarkdown(content string) string {
 	return content
+}
+
+func extractEntryIDFromURL(editURL string) string {
+	return path.Base(editURL)
 }

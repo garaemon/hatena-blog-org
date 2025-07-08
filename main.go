@@ -43,12 +43,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := postOrgFile(*orgFile, config, *category, *isDraft); err != nil {
+	articleURL, err := postOrgFile(*orgFile, config, *category, *isDraft)
+	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("Successfully posted to Hatena Blog!")
+	fmt.Printf("Successfully posted to Hatena Blog!\nEdit URL: %s\n", articleURL)
 }
 
 func runInteractiveMode() {
@@ -89,28 +90,29 @@ func runInteractiveMode() {
 		os.Exit(1)
 	}
 
-	if err := postOrgFile(orgFile, config, category, isDraft); err != nil {
+	articleURL, err := postOrgFile(orgFile, config, category, isDraft)
+	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("Successfully posted to Hatena Blog!")
+	fmt.Printf("Successfully posted to Hatena Blog!\nEdit URL: %s\n", articleURL)
 }
 
-func postOrgFile(orgFile string, config *Config, category string, isDraft bool) error {
+func postOrgFile(orgFile string, config *Config, category string, isDraft bool) (string, error) {
 	absPath, err := getAbsPath(orgFile)
 	if err != nil {
-		return fmt.Errorf("failed to get absolute path: %v", err)
+		return "", fmt.Errorf("failed to get absolute path: %v", err)
 	}
 
 	title, err := extractTitleFromOrg(absPath)
 	if err != nil {
-		return fmt.Errorf("failed to extract title from org file: %v", err)
+		return "", fmt.Errorf("failed to extract title from org file: %v", err)
 	}
 
 	categories, err := extractCategoriesFromOrg(absPath)
 	if err != nil {
-		return fmt.Errorf("failed to extract categories from org file: %v", err)
+		return "", fmt.Errorf("failed to extract categories from org file: %v", err)
 	}
 
 	if category != "" {
@@ -119,7 +121,7 @@ func postOrgFile(orgFile string, config *Config, category string, isDraft bool) 
 
 	markdown, err := convertOrgToMarkdown(absPath)
 	if err != nil {
-		return fmt.Errorf("failed to convert org to markdown: %v", err)
+		return "", fmt.Errorf("failed to convert org to markdown: %v", err)
 	}
 
 	content := removeTitleFromMarkdown(markdown)
