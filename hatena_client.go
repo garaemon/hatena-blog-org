@@ -137,7 +137,7 @@ func (c *HatenaClient) PostEntry(entry BlogEntry) (string, error) {
 			break
 		}
 	}
-	
+
 	if editURL == "" {
 		return "", fmt.Errorf("edit link not found in API response")
 	}
