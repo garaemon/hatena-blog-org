@@ -282,6 +282,130 @@ func TestFilterOrgMetadata(t *testing.T) {
 	}
 }
 
+func TestExtractImageLinks(t *testing.T) {
+	tmpDir := t.TempDir()
+	orgFile := filepath.Join(tmpDir, "test.org")
+	
+	tests := []struct {
+		name     string
+		content  string
+		expected []string
+	}{
+		{
+			name: "single image with file: prefix",
+			content: `#+TITLE: Test Article
+
+This is an image:
+[[file:./images/test.jpg]]
+
+End of article.`,
+			expected: []string{filepath.Join(tmpDir, "images", "test.jpg")},
+		},
+		{
+			name: "single image without file: prefix",
+			content: `#+TITLE: Test Article
+
+This is an image:
+[[./images/test.png]]
+
+End of article.`,
+			expected: []string{filepath.Join(tmpDir, "images", "test.png")},
+		},
+		{
+			name: "multiple images",
+			content: `#+TITLE: Test Article
+
+First image: [[file:./img1.jpg]]
+Second image: [[./img2.png]]
+Third image: [[file:/absolute/path/img3.gif]]
+
+End of article.`,
+			expected: []string{
+				filepath.Join(tmpDir, "img1.jpg"),
+				filepath.Join(tmpDir, "img2.png"),
+				"/absolute/path/img3.gif",
+			},
+		},
+		{
+			name: "no images",
+			content: `#+TITLE: Test Article
+
+No images here.
+[[https://example.com/link]]
+
+End of article.`,
+			expected: []string{},
+		},
+		{
+			name: "mixed image formats",
+			content: `#+TITLE: Test Article
+
+JPG: [[file:./test.jpg]]
+JPEG: [[./test.jpeg]]
+PNG: [[file:./test.png]]
+GIF: [[./test.gif]]
+BMP: [[file:./test.bmp]]
+WEBP: [[./test.webp]]
+SVG: [[file:./test.svg]]
+
+End of article.`,
+			expected: []string{
+				filepath.Join(tmpDir, "test.jpg"),
+				filepath.Join(tmpDir, "test.jpeg"),
+				filepath.Join(tmpDir, "test.png"),
+				filepath.Join(tmpDir, "test.gif"),
+				filepath.Join(tmpDir, "test.bmp"),
+				filepath.Join(tmpDir, "test.webp"),
+				filepath.Join(tmpDir, "test.svg"),
+			},
+		},
+		{
+			name: "same line multiple images",
+			content: `#+TITLE: Test Article
+
+Multiple on same line: [[./img1.jpg]] and [[file:./img2.png]]
+
+End of article.`,
+			expected: []string{
+				filepath.Join(tmpDir, "img1.jpg"),
+				filepath.Join(tmpDir, "img2.png"),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := os.WriteFile(orgFile, []byte(tt.content), 0644)
+			if err != nil {
+				t.Fatalf("Failed to write test file: %v", err)
+			}
+
+			result, err := extractImageLinks(orgFile)
+			if err != nil {
+				t.Fatalf("extractImageLinks() error = %v", err)
+			}
+
+			if len(result) != len(tt.expected) {
+				t.Errorf("extractImageLinks() returned %d links, want %d", len(result), len(tt.expected))
+				return
+			}
+
+			for i, expected := range tt.expected {
+				if result[i] != expected {
+					t.Errorf("extractImageLinks()[%d] = %q, want %q", i, result[i], expected)
+				}
+			}
+		})
+	}
+}
+
+func TestExtractImageLinksFileNotFound(t *testing.T) {
+	_, err := extractImageLinks("/nonexistent/file.org")
+	if err == nil {
+		t.Error("extractImageLinks() should return error for nonexistent file")
+	}
+}
+
 func isPandocAvailable() bool {
 	_, err := exec.LookPath("pandoc")
 	return err == nil

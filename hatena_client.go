@@ -7,7 +7,9 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"path"
 	"strings"
 	"time"
@@ -34,6 +36,16 @@ type AtomEntry struct {
 		Rel  string `xml:"rel,attr"`
 		Href string `xml:"href,attr"`
 	} `xml:"link"`
+}
+
+type FotolifeResponse struct {
+	XMLName xml.Name `xml:"entry"`
+	Title   string   `xml:"title"`
+	Links   []struct {
+		Rel  string `xml:"rel,attr"`
+		Href string `xml:"href,attr"`
+	} `xml:"link"`
+	Summary string `xml:"summary"`
 }
 
 func NewHatenaClient(hatenaID, apiKey, blogDomain string) *HatenaClient {
@@ -162,4 +174,77 @@ func removeTitleFromMarkdown(content string) string {
 
 func extractEntryIDFromURL(editURL string) string {
 	return path.Base(editURL)
+}
+
+func (c *HatenaClient) uploadImage(imagePath string) (string, error) {
+	file, err := os.Open(imagePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to open image file: %v", err)
+	}
+	defer file.Close()
+
+	var requestBody bytes.Buffer
+	writer := multipart.NewWriter(&requestBody)
+
+	fileWriter, err := writer.CreateFormFile("image", path.Base(imagePath))
+	if err != nil {
+		return "", fmt.Errorf("failed to create form file: %v", err)
+	}
+
+	_, err = io.Copy(fileWriter, file)
+	if err != nil {
+		return "", fmt.Errorf("failed to copy file content: %v", err)
+	}
+
+	err = writer.WriteField("title", path.Base(imagePath))
+	if err != nil {
+		return "", fmt.Errorf("failed to write title field: %v", err)
+	}
+
+	err = writer.Close()
+	if err != nil {
+		return "", fmt.Errorf("failed to close multipart writer: %v", err)
+	}
+
+	fotolifeURL := fmt.Sprintf("https://f.hatena.ne.jp/%s/atom/post", c.HatenaID)
+	req, err := http.NewRequest("POST", fotolifeURL, &requestBody)
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %v", err)
+	}
+
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("X-WSSE", c.createWSSEHeader())
+
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("image upload failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response body: %v", err)
+	}
+
+	var fotolifeResponse FotolifeResponse
+	if err := xml.Unmarshal(body, &fotolifeResponse); err != nil {
+		return "", fmt.Errorf("failed to parse response XML: %v", err)
+	}
+
+	for _, link := range fotolifeResponse.Links {
+		if link.Rel == "enclosure" {
+			return link.Href, nil
+		}
+	}
+
+	return "", fmt.Errorf("image URL not found in response")
 }
