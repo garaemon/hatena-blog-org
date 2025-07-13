@@ -5,8 +5,13 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
+
+type ImageUploader interface {
+	uploadImage(imagePath string) (string, error)
+}
 
 func main() {
 	var (
@@ -119,14 +124,28 @@ func postOrgFile(orgFile string, config *Config, category string, isDraft bool) 
 		categories = append(categories, category)
 	}
 
+	client := NewHatenaClient(config.HatenaID, config.APIKey, config.BlogDomain)
+
+	// 画像リンクを抽出
+	imageLinks, err := extractImageLinks(absPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to extract image links: %v", err)
+	}
+
+	// Org-modeファイルをMarkdownに変換
 	markdown, err := convertOrgToMarkdown(absPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to convert org to markdown: %v", err)
 	}
 
-	content := removeTitleFromMarkdown(markdown)
+	// 画像をアップロードしてMarkdownリンクを更新
+	content, err := processImageUploads(markdown, imageLinks, client)
+	if err != nil {
+		return "", fmt.Errorf("failed to process image uploads: %v", err)
+	}
 
-	client := NewHatenaClient(config.HatenaID, config.APIKey, config.BlogDomain)
+	content = removeTitleFromMarkdown(content)
+
 	entry := BlogEntry{
 		Title:      title,
 		Content:    content,
@@ -135,6 +154,33 @@ func postOrgFile(orgFile string, config *Config, category string, isDraft bool) 
 	}
 
 	return client.PostEntry(entry)
+}
+
+func processImageUploads(markdown string, imageLinks []string, client ImageUploader) (string, error) {
+	content := markdown
+	
+	for _, imagePath := range imageLinks {
+		if !fileExists(imagePath) {
+			fmt.Printf("Warning: Image file not found: %s\n", imagePath)
+			continue
+		}
+
+		fmt.Printf("Uploading image: %s\n", imagePath)
+		imageURL, err := client.uploadImage(imagePath)
+		if err != nil {
+			return "", fmt.Errorf("failed to upload image %s: %v", imagePath, err)
+		}
+
+		// Markdownの画像リンクを更新
+		// ![alt](local/path) を ![alt](uploaded_url) に置換
+		localImageMarkdown := fmt.Sprintf("![%s](%s)", filepath.Base(imagePath), imagePath)
+		uploadedImageMarkdown := fmt.Sprintf("![%s](%s)", filepath.Base(imagePath), imageURL)
+		content = strings.ReplaceAll(content, localImageMarkdown, uploadedImageMarkdown)
+
+		fmt.Printf("Image uploaded successfully: %s\n", imageURL)
+	}
+
+	return content, nil
 }
 
 func validateConfig(config *Config) error {

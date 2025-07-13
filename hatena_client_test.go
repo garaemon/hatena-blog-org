@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -163,5 +165,38 @@ More content.`
 	content := removeTitleFromMarkdown(markdown)
 	if content != markdown {
 		t.Error("Content should remain unchanged when no title is present")
+	}
+}
+
+func TestUploadImageFileNotFound(t *testing.T) {
+	client := NewHatenaClient("testuser", "testkey", "testdomain")
+	_, err := client.uploadImage("/nonexistent/image.jpg")
+	if err == nil {
+		t.Error("Expected error for nonexistent image file")
+	}
+	
+	if !strings.Contains(err.Error(), "failed to open image file") {
+		t.Errorf("Expected file open error, got: %v", err)
+	}
+}
+
+func TestUploadImageValidFile(t *testing.T) {
+	tmpFile := filepath.Join(os.TempDir(), "test_upload.jpg")
+	err := os.WriteFile(tmpFile, []byte("fake image content"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tmpFile)
+
+	client := NewHatenaClient("testuser", "testkey", "testdomain")
+	
+	_, err = client.uploadImage(tmpFile)
+	if err == nil {
+		t.Skip("Skipping actual upload test - would require real credentials and network access")
+	}
+
+	if !strings.Contains(err.Error(), "request failed") && 
+	   !strings.Contains(err.Error(), "image upload failed") {
+		t.Errorf("Expected network/API error, got: %v", err)
 	}
 }

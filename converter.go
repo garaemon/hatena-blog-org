@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -123,4 +124,41 @@ func extractCategoriesFromOrg(orgFilePath string) ([]string, error) {
 
 func getAbsPath(path string) (string, error) {
 	return filepath.Abs(path)
+}
+
+func extractImageLinks(orgFilePath string) ([]string, error) {
+	file, err := os.Open(orgFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open org file: %v", err)
+	}
+	defer file.Close()
+
+	var imageLinks []string
+	scanner := bufio.NewScanner(file)
+	
+	// Org-mode画像リンクの正規表現
+	// [[file:path/to/image.jpg]] または [[./image.png]]
+	orgImageRegex := regexp.MustCompile(`\[\[(?:file:)?([^]]+\.(?:jpg|jpeg|png|gif|bmp|webp|svg))\]\]`)
+	
+	for scanner.Scan() {
+		line := scanner.Text()
+		matches := orgImageRegex.FindAllStringSubmatch(line, -1)
+		for _, match := range matches {
+			if len(match) > 1 {
+				imagePath := match[1]
+				// 相対パスの場合は絶対パスに変換
+				if !filepath.IsAbs(imagePath) {
+					baseDir := filepath.Dir(orgFilePath)
+					imagePath = filepath.Join(baseDir, imagePath)
+				}
+				imageLinks = append(imageLinks, imagePath)
+			}
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("failed to read org file: %v", err)
+	}
+
+	return imageLinks, nil
 }
