@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/xml"
 	"fmt"
+	"html"
 	"io"
 	"net/http"
 	"path"
@@ -81,7 +82,7 @@ func (c *HatenaClient) createEntryXML(entry BlogEntry) string {
 	for _, category := range entry.Categories {
 		if category != "" {
 			xml += fmt.Sprintf(`
-  <category term="%s" />`, category)
+  <category term="%s" />`, html.EscapeString(category))
 		}
 	}
 
@@ -91,12 +92,15 @@ func (c *HatenaClient) createEntryXML(entry BlogEntry) string {
   </app:control>
 </entry>`, draftStatus)
 
-	return fmt.Sprintf(xml, entry.Title, c.HatenaID, entry.Content, time.Now().Format(time.RFC3339))
+	return fmt.Sprintf(xml, html.EscapeString(entry.Title), html.EscapeString(c.HatenaID), html.EscapeString(entry.Content), time.Now().Format(time.RFC3339))
 }
 
-func (c *HatenaClient) PostEntry(entry BlogEntry) (string, error) {
+func (c *HatenaClient) PostEntry(entry BlogEntry, debug bool) (string, error) {
 	entryXML := c.createEntryXML(entry)
-
+	if debug {
+		fmt.Println("Generated XML:")
+		fmt.Println(entryXML)
+	}
 	req, err := http.NewRequest("POST", c.BaseURL+"/entry", bytes.NewBufferString(entryXML))
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %v", err)

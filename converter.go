@@ -18,14 +18,16 @@ func convertOrgToMarkdown(orgFilePath string) (string, error) {
 		return "", fmt.Errorf("file is not an org file: %s", orgFilePath)
 	}
 
-	cmd := exec.Command("pandoc", "-f", "org", "-t", "markdown", orgFilePath)
+	cmd := exec.Command("pandoc", "-f", "org", "-t", "markdown", "--wrap=preserve", orgFilePath)
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("pandoc conversion failed: %v", err)
 	}
 
 	markdown := string(output)
-	return filterOrgMetadata(markdown), nil
+	markdown = filterOrgMetadata(markdown)
+	markdown = removeVerbatimAttributes(markdown)
+	return markdown, nil
 }
 
 func filterOrgMetadata(markdown string) string {
@@ -48,6 +50,10 @@ func filterOrgMetadata(markdown string) string {
 	}
 
 	return strings.Join(filteredLines, "\n")
+}
+
+func removeVerbatimAttributes(markdown string) string {
+	return strings.ReplaceAll(markdown, "{.verbatim}", "")
 }
 
 func fileExists(filename string) bool {
