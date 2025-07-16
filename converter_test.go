@@ -282,6 +282,44 @@ func TestFilterOrgMetadata(t *testing.T) {
 	}
 }
 
+func TestRemoveVerbatimAttributes(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "single verbatim attribute",
+			input:    "Some text `code{.verbatim}` more text",
+			expected: "Some text `code` more text",
+		},
+		{
+			name:     "multiple verbatim attributes",
+			input:    "`first{.verbatim}` and `second{.verbatim}` code blocks",
+			expected: "`first` and `second` code blocks",
+		},
+		{
+			name:     "no verbatim attributes",
+			input:    "Regular text with `code` blocks",
+			expected: "Regular text with `code` blocks",
+		},
+		{
+			name:     "verbatim in code block",
+			input:    "```bash{.verbatim}\necho hello\n```",
+			expected: "```bash\necho hello\n```",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := removeVerbatimAttributes(tt.input)
+			if result != tt.expected {
+				t.Errorf("Expected:\n%q\nGot:\n%q", tt.expected, result)
+			}
+		})
+	}
+}
+
 func isPandocAvailable() bool {
 	_, err := exec.LookPath("pandoc")
 	return err == nil

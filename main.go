@@ -18,6 +18,7 @@ func main() {
 		isDraft     = flag.Bool("draft", false, "Post as draft")
 		configFile  = flag.String("config", "", "Path to config file")
 		interactive = flag.Bool("interactive", false, "Interactive mode")
+		debug       = flag.Bool("debug", false, "Enable debug output")
 	)
 	flag.Parse()
 
@@ -43,7 +44,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	articleURL, err := postOrgFile(*orgFile, config, *category, *isDraft)
+	articleURL, err := postOrgFile(*orgFile, config, *category, *isDraft, *debug)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
@@ -90,7 +91,7 @@ func runInteractiveMode() {
 		os.Exit(1)
 	}
 
-	articleURL, err := postOrgFile(orgFile, config, category, isDraft)
+	articleURL, err := postOrgFile(orgFile, config, category, isDraft, false)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
@@ -99,7 +100,7 @@ func runInteractiveMode() {
 	fmt.Printf("Successfully posted to Hatena Blog!\nEdit URL: %s\n", articleURL)
 }
 
-func postOrgFile(orgFile string, config *Config, category string, isDraft bool) (string, error) {
+func postOrgFile(orgFile string, config *Config, category string, isDraft bool, debug bool) (string, error) {
 	absPath, err := getAbsPath(orgFile)
 	if err != nil {
 		return "", fmt.Errorf("failed to get absolute path: %v", err)
@@ -134,7 +135,7 @@ func postOrgFile(orgFile string, config *Config, category string, isDraft bool) 
 		IsDraft:    isDraft,
 	}
 
-	return client.PostEntry(entry)
+	return client.PostEntry(entry, debug)
 }
 
 func validateConfig(config *Config) error {

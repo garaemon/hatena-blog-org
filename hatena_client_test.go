@@ -165,3 +165,50 @@ More content.`
 		t.Error("Content should remain unchanged when no title is present")
 	}
 }
+
+func TestCreateEntryXMLEscapesSpecialCharacters(t *testing.T) {
+	client := NewHatenaClient("test<user>", "testapi", "testblog.example.com")
+	entry := BlogEntry{
+		Title:      "Test & Title with <tags>",
+		Content:    "Test content with <script> & \"quotes\"",
+		Categories: []string{"Test & Category with <tags>"},
+		IsDraft:    false,
+	}
+
+	xml := client.createEntryXML(entry)
+
+	expectedTitle := "<title>Test &amp; Title with &lt;tags&gt;</title>"
+	if !strings.Contains(xml, expectedTitle) {
+		t.Errorf("XML should escape title properly, expected: %s", expectedTitle)
+	}
+
+	expectedContent := "<content type=\"text/x-markdown\">Test content with &lt;script&gt; &amp; &#34;quotes&#34;</content>"
+	if !strings.Contains(xml, expectedContent) {
+		t.Errorf("XML should escape content properly, expected: %s", expectedContent)
+	}
+
+	expectedCategory := "<category term=\"Test &amp; Category with &lt;tags&gt;\" />"
+	if !strings.Contains(xml, expectedCategory) {
+		t.Errorf("XML should escape category properly, expected: %s", expectedCategory)
+	}
+
+	expectedAuthor := "<author><name>test&lt;user&gt;</name></author>"
+	if !strings.Contains(xml, expectedAuthor) {
+		t.Errorf("XML should escape author name properly, expected: %s", expectedAuthor)
+	}
+}
+
+func TestPostEntryDebugMode(t *testing.T) {
+	client := NewHatenaClient("testuser", "testapi", "testblog.example.com")
+	entry := BlogEntry{
+		Title:      "Test Title",
+		Content:    "Test content",
+		Categories: []string{"Test Category"},
+		IsDraft:    false,
+	}
+
+	_, err := client.PostEntry(entry, true)
+	if err == nil {
+		t.Error("Expected HTTP error since we're not making a real request")
+	}
+}
