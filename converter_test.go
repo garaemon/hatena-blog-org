@@ -320,6 +320,87 @@ func TestRemoveVerbatimAttributes(t *testing.T) {
 	}
 }
 
+func TestRemoveAttachTags(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "single attach tag",
+			input:    "# Section [[ATTACH]{.smallcaps}]{.tag tag-name=\"ATTACH\"}\n\nContent here",
+			expected: "# Section \n\nContent here",
+		},
+		{
+			name:     "multiple attach tags",
+			input:    "# Section 1 [[ATTACH]{.smallcaps}]{.tag tag-name=\"ATTACH\"}\n\n# Section 2 [[ATTACH]{.smallcaps}]{.tag tag-name=\"ATTACH\"}",
+			expected: "# Section 1 \n\n# Section 2 ",
+		},
+		{
+			name:     "no attach tags",
+			input:    "# Regular Section\n\nContent without attach tags",
+			expected: "# Regular Section\n\nContent without attach tags",
+		},
+		{
+			name:     "attach tag with surrounding text",
+			input:    "Before [[ATTACH]{.smallcaps}]{.tag tag-name=\"ATTACH\"} after",
+			expected: "Before  after",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := removeAttachTags(tt.input)
+			if result != tt.expected {
+				t.Errorf("Expected:\n%q\nGot:\n%q", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestRemoveIdAttributes(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "single id attribute",
+			input:    "# Section {#29302AC1-B779-4976-B6E3-ACE995038F26}\n\nContent here",
+			expected: "# Section\n\nContent here",
+		},
+		{
+			name:     "multiple id attributes",
+			input:    "# Section 1 {#29302AC1-B779-4976-B6E3-ACE995038F26}\n\n# Section 2 {#9883F664-5A17-4408-B291-CE667F7143DE}",
+			expected: "# Section 1\n\n# Section 2",
+		},
+		{
+			name:     "no id attributes",
+			input:    "# Regular Section\n\nContent without id attributes",
+			expected: "# Regular Section\n\nContent without id attributes",
+		},
+		{
+			name:     "id with spaces before",
+			input:    "# Section Title {#ABC123-DEF4-5678}",
+			expected: "# Section Title",
+		},
+		{
+			name:     "short id format",
+			input:    "# Section {#abc123}\n\nContent",
+			expected: "# Section\n\nContent",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := removeIdAttributes(tt.input)
+			if result != tt.expected {
+				t.Errorf("Expected:\n%q\nGot:\n%q", tt.expected, result)
+			}
+		})
+	}
+}
+
 func isPandocAvailable() bool {
 	_, err := exec.LookPath("pandoc")
 	return err == nil
