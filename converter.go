@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -27,6 +28,8 @@ func convertOrgToMarkdown(orgFilePath string) (string, error) {
 	markdown := string(output)
 	markdown = filterOrgMetadata(markdown)
 	markdown = removeVerbatimAttributes(markdown)
+	markdown = removeAttachTags(markdown)
+	markdown = removeIdAttributes(markdown)
 	return markdown, nil
 }
 
@@ -54,6 +57,18 @@ func filterOrgMetadata(markdown string) string {
 
 func removeVerbatimAttributes(markdown string) string {
 	return strings.ReplaceAll(markdown, "{.verbatim}", "")
+}
+
+func removeAttachTags(markdown string) string {
+	// Remove ATTACH tags like [[ATTACH]{.smallcaps}]{.tag tag-name="ATTACH"}
+	re := regexp.MustCompile(`\[\[ATTACH\]\{\.smallcaps\}\]\{\.tag tag-name="ATTACH"\}`)
+	return re.ReplaceAllString(markdown, "")
+}
+
+func removeIdAttributes(markdown string) string {
+	// Remove ID attributes like {#29302AC1-B779-4976-B6E3-ACE995038F26}
+	re := regexp.MustCompile(`\s*\{#[A-Za-z0-9-]+\}`)
+	return re.ReplaceAllString(markdown, "")
 }
 
 func fileExists(filename string) bool {
